@@ -11,3 +11,5 @@ demo_state/
 site/
 dashboard/data/
 dbt/.user.yml
+video/*.mp4
+video/*.png

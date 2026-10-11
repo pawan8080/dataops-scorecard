@@ -109,6 +109,17 @@ python scripts/seed_demo.py --state-dir demo_state
 python -m metrics.compute --state-dir demo_state --out dashboard/data/metrics.json
 ```
 
+## LinkedIn clip
+
+`video/` renders a 26-second, 1080×1350 MP4 from the same `metrics.json`, so the clip always matches the dashboard:
+
+```bash
+pip install playwright && playwright install chromium   # needs ffmpeg on PATH
+python video/render.py --metrics dashboard/data/metrics.json --out video/dataops-scorecard.mp4
+```
+
+Each frame is drawn by `setTime(t)` in `video/scene.html`, so renders are deterministic. A "demo data" label appears automatically when the metrics come from the demo seed.
+
 ## Setup on GitHub
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**

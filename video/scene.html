@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DataOps Scorecard clip</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* A 1080x1350 (4:5) frame. Time is driven by setTime(t); nothing animates on its own, so every frame is reproducible. */
+:root {
+  --bg: #0b1220; --panel: #121b2b; --fg: #e8edf5; --fg-2: #b3bfcf; --muted: #7d8899; --line: #1f2a3c;
+  --accent: #7d9bff; --good: #19b33a; --critical: #e04848; --critical-ink: #ff8a8a; --injected: #56627a;
+  --display: "Archivo", "Arial Narrow", sans-serif; --body: "Source Sans 3", system-ui, sans-serif; --mono: "JetBrains Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1080px; height: 1350px; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); }
+#stage { position: relative; width: 1080px; height: 1350px; overflow: hidden;
+  background:
+    radial-gradient(900px 600px at 80% -10%, rgba(125,155,255,.14), transparent 60%),
+    linear-gradient(var(--bg), var(--bg)); }
+.grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 54px 54px; }
+.chrome { position: absolute; left: 72px; right: 72px; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 22px; color: var(--muted); letter-spacing: .04em; }
+.chrome.top { top: 56px; } .chrome.bottom { bottom: 52px; }
+.chrome b { color: var(--fg-2); font-weight: 500; }
+.scene { position: absolute; left: 72px; right: 72px; top: 140px; bottom: 130px; opacity: 0; }
+.hook { display: grid; align-content: center; gap: 36px; height: 100%; }
+.hook div { font-family: var(--display); font-weight: 800; font-size: 104px; line-height: .98; letter-spacing: -0.02em; }
+.hook .two { color: var(--accent); }
+.title { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1.02; letter-spacing: -0.015em; min-height: 140px; }
+.caption { font-size: 31px; color: var(--fg-2); margin-top: 14px; min-height: 44px; line-height: 1.3; }
+
+/* Pipeline diagram */
+#diagram { position: absolute; left: 72px; right: 72px; top: 400px; opacity: 0; }
+.rail { position: absolute; left: 44px; top: 40px; bottom: 40px; width: 4px; background: var(--line); border-radius: 2px; }
+.packet { position: absolute; left: 34px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 8px rgba(125,155,255,.18), 0 0 30px rgba(125,155,255,.6); }
+.stages { display: grid; gap: 22px; position: relative; }
+.st { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 22px; background: var(--panel); border: 2px solid var(--line); border-radius: 20px; padding: 20px 26px 20px 0; transition: none; }
+.st .ic { justify-self: center; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--muted); background: var(--bg); display: grid; place-items: center; font-size: 22px; font-weight: 700; color: var(--bg); position: relative; z-index: 2; }
+.st .k { font-family: var(--mono); font-size: 18px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.st .n { font-size: 34px; font-weight: 600; }
+.st .v { font-family: var(--mono); font-size: 22px; color: var(--fg-2); text-align: right; }
+.st.done .ic { background: var(--good); border-color: var(--good); }
+.st.failed { border-color: var(--critical); background: #2a1620; }
+.st.failed .ic { background: var(--critical); border-color: var(--critical); }
+.st.skipped { opacity: .4; }
+.err { margin-top: 26px; font-family: var(--mono); font-size: 25px; line-height: 1.45; color: var(--fg); background: rgba(224,72,72,.12); border-left: 6px solid var(--critical); border-radius: 0 14px 14px 0; padding: 20px 24px; min-height: 120px; opacity: 0; }
+.err .cursor { display: inline-block; width: 13px; height: 28px; background: var(--critical-ink); vertical-align: -5px; margin-left: 2px; }
+
+/* Heartbeat */
+.beat-box { margin-top: 40px; background: var(--panel); border: 2px solid var(--line); border-radius: 22px; padding: 34px 30px 26px; }
+.beat-box svg { display: block; width: 100%; height: auto; }
+.legend { display: flex; gap: 28px; margin-top: 26px; font-size: 26px; color: var(--fg-2); flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 10px; }
+.legend i { width: 18px; height: 18px; border-radius: 4px; display: inline-block; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
+.stat { background: var(--panel); border: 2px solid var(--line); border-radius: 18px; padding: 22px 24px; }
+.stat b { display: block; font-family: var(--display); font-size: 58px; font-weight: 700; line-height: 1; }
+.stat span { font-size: 23px; color: var(--muted); }
+
+/* Scorecard */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 60px; }
+.tile { min-height: 300px; }
+.tile { background: var(--panel); border: 2px solid var(--line); border-radius: 22px; padding: 30px 30px 26px; display: grid; gap: 14px; }
+.tile .l { font-size: 27px; color: var(--fg-2); }
+.tile .val { font-family: var(--display); font-size: 92px; font-weight: 700; line-height: .95; letter-spacing: -0.02em; }
+.tile .val small { font-family: var(--body); font-size: 30px; font-weight: 400; color: var(--muted); margin-left: 8px; letter-spacing: 0; }
+.tile .t { display: flex; justify-content: space-between; font-size: 23px; color: var(--muted); }
+.tile .ok { color: #4fd36a; font-weight: 600; }
+.tile .bad { color: var(--critical-ink); font-weight: 600; }
+.bar { height: 10px; background: var(--line); border-radius: 5px; position: relative; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--good); }
+
+/* End card */
+.end { display: grid; align-content: center; gap: 30px; height: 100%; }
+.end .name { font-family: var(--display); font-weight: 800; font-size: 120px; line-height: .92; letter-spacing: -0.025em; }
+.end .pitch { font-size: 40px; color: var(--fg-2); max-width: 22ch; line-height: 1.25; }
+.chips { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+.chips span { font-family: var(--mono); font-size: 25px; padding: 10px 20px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--fg-2); }
+.url { font-family: var(--mono); font-size: 32px; color: var(--accent); margin-top: 16px; }
+.demo-note { position: absolute; right: 72px; bottom: 100px; font-family: var(--mono); font-size: 20px; color: #fab219; opacity: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="grid"></div>
+  <div class="chrome top"><span>DATAOPS SCORECARD</span><b id="clock">cron 17 */3 * * *</b></div>
+
+  <div class="scene" id="s-hook">
+    <div class="hook">
+      <div class="one" id="hook1">Software teams track DORA metrics.</div>
+      <div class="two" id="hook2">Most data teams don't.</div>
+    </div>
+  </div>
+
+  <div class="scene" id="s-pipe">
+    <div class="title" id="pipe-title"></div>
+    <div class="caption" id="pipe-caption"></div>
+  </div>
+
+  <div id="diagram">
+    <div class="stages" id="stages"><div class="rail"></div></div>
+    <div class="packet" id="packet"></div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="scene" id="s-beat">
+    <div class="title" id="beat-title"></div>
+    <div class="beat-box">
+      <svg id="beat" viewBox="0 0 900 340"></svg>
+      <div class="legend">
+        <span><i style="background:var(--good)"></i>Success</span>
+        <span><i style="background:var(--critical)"></i>Real failure</span>
+        <span><i style="background:var(--injected)"></i>Injected fault</span>
+      </div>
+    </div>
+    <div class="stats" id="beat-stats"></div>
+  </div>
+
+  <div class="scene" id="s-score">
+    <div class="title">The scorecard</div>
+    <div class="caption">DORA metrics, computed from the pipeline's own run log.</div>
+    <div class="tiles" id="tiles"></div>
+  </div>
+
+  <div class="scene" id="s-end">
+    <div class="end">
+      <div class="name">DataOps<br>Scorecard</div>
+      <div class="pitch">A data pipeline that measures its own delivery, reliability and quality.</div>
+      <div class="chips"><span>Python</span><span>DuckDB</span><span>dbt</span><span>GitHub Actions</span></div>
+      <div class="url" id="url"></div>
+    </div>
+  </div>
+
+  <div class="demo-note" id="demo-note">Preview: demo data</div>
+  <div class="chrome bottom"><span id="foot-left">Open-Meteo → DuckDB → dbt</span><b id="foot-right"></b></div>
+</div>
+
+<script>
+const M = window.METRICS || {};
+const URL_TEXT = window.SITE_URL || "pawan8080.github.io/dataops-scorecard";
+const DURATION = 26;
+
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const ease = (p) => 1 - Math.pow(1 - p, 3);
+const easeIO = (p) => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const fadeWin = (t, a, b, f = .4) => Math.min(ease(seg(t, a, a + f)), 1 - ease(seg(t, b - f, b)));
+const fmt = (v, d = 1) => v == null ? "–" : Number(v).toLocaleString("en-US", { maximumFractionDigits: d });
+
+/* ---- data ---- */
+const T = M.totals || {};
+const sc = Object.fromEntries((M.scorecard || []).map(s => [s.key, s]));
+const latest = (M.recent_runs || []).find(r => r.status === "success") || { stage_durations_s: { ingest: 2.1, load: .3, transform: 4.2 }, tests_total: 18, tests_passed: 18, rows_ingested: 30 };
+const sd = latest.stage_durations_s || {};
+const ttr = sc.time_to_restore_hours_median ? sc.time_to_restore_hours_median.value : null;
+
+const STAGES = [
+  { k: "Source", n: "Open-Meteo API", v: "6 cities" },
+  { k: "Ingest", n: "Extract", v: `${fmt(latest.rows_ingested || 30, 0)} rows · ${fmt(sd.ingest, 1)}s` },
+  { k: "Load", n: "Contract check → DuckDB", v: `${fmt(sd.load, 1)}s` },
+  { k: "Transform", n: "dbt build", v: `${latest.tests_passed || 18}/${latest.tests_total || 18} tests · ${fmt(sd.transform, 1)}s` },
+  { k: "Publish", n: "Marts + dashboard", v: "live" },
+];
+const stagesEl = $("stages");
+const stageEls = STAGES.map(s => {
+  const d = document.createElement("div");
+  d.className = "st";
+  const ic = document.createElement("div"); ic.className = "ic";
+  const mid = document.createElement("div");
+  const k = document.createElement("div"); k.className = "k"; k.textContent = s.k;
+  const n = document.createElement("div"); n.className = "n"; n.textContent = s.n;
+  mid.append(k, n);
+  const v = document.createElement("div"); v.className = "v"; v.textContent = s.v;
+  d.append(ic, mid, v);
+  stagesEl.appendChild(d);
+  return { d, ic, v, base: s.v };
+});
+const ERR = "ContractViolation: missing=['temperature_2m_max'] unexpected=['temp_max_c']";
+
+/* Heartbeat bars */
+const runs = (M.timeline || []).slice();
+const beat = $("beat");
+const NS = "http://www.w3.org/2000/svg";
+const beatBars = [];
+if (runs.length) {
+  const t0 = new Date(runs[0].t).getTime(), t1 = new Date(runs[runs.length - 1].t).getTime() || t0 + 1;
+  const bw = Math.max(2.4, Math.min(8, 860 / runs.length * .62));
+  runs.forEach((r, i) => {
+    const x = 20 + (new Date(r.t).getTime() - t0) / Math.max(1, t1 - t0) * 860;
+    const tall = r.s !== "success";
+    const h = tall ? 300 : 170;
+    const rect = document.createElementNS(NS, "rect");
+    rect.setAttribute("x", (x - bw / 2).toFixed(1));
+    rect.setAttribute("width", bw.toFixed(1));
+    rect.setAttribute("rx", 1.5);
+    rect.setAttribute("fill", r.s === "success" ? "#19b33a" : r.f ? "#56627a" : "#e04848");
+    beat.appendChild(rect);
+    beatBars.push({ rect, h, frac: i / runs.length });
+  });
+  const axis = document.createElementNS(NS, "line");
+  axis.setAttribute("x1", 10); axis.setAttribute("x2", 890); axis.setAttribute("y1", 331); axis.setAttribute("y2", 331);
+  axis.setAttribute("stroke", "#33415a"); axis.setAttribute("stroke-width", 2);
+  beat.appendChild(axis);
+}
+$("beat-title").textContent = `${M.window_days || 30} days. ${fmt(runs.length || T.runs, 0)} runs.`;
+const statsEl = $("beat-stats");
+const STATS = [
+  [T.successful_runs, "successful"],
+  [T.real_failures, "real failures"],
+  [T.injected_failures, "injected faults"],
+].map(([v, l]) => {
+  const d = document.createElement("div"); d.className = "stat";
+  const b = document.createElement("b"); const s = document.createElement("span"); s.textContent = l;
+  d.append(b, s); statsEl.appendChild(d);
+  return { b, v: v || 0 };
+});
+
+/* Scorecard tiles */
+const TILE_KEYS = ["deployment_frequency_per_week", "lead_time_hours_median", "change_failure_rate_pct", "time_to_restore_hours_median"];
+const tilesEl = $("tiles");
+const tiles = TILE_KEYS.map(key => {
+  const s = sc[key] || { label: key, value: null, target: null, status: "no_data", better: "higher" };
+  const d = document.createElement("div"); d.className = "tile";
+  const l = document.createElement("div"); l.className = "l"; l.textContent = s.label;
+  const val = document.createElement("div"); val.className = "val";
+  const bar = document.createElement("div"); bar.className = "bar"; const bi = document.createElement("i"); bar.appendChild(bi);
+  const t = document.createElement("div"); t.className = "t";
+  const tgt = document.createElement("span");
+  const st = document.createElement("span");
+  st.className = s.status === "met" ? "ok" : "bad";
+  st.textContent = s.status === "met" ? "✓ On target" : s.status === "at_risk" ? "At risk" : s.status === "missed" ? "Off target" : "No data";
+  t.append(tgt, st);
+  d.append(l, val, bar, t); tilesEl.appendChild(d);
+  const unitOf = (k, v) => {
+    if (k.includes("hours")) return v != null && v < 1 ? ["min", 60] : ["h", 1];
+    if (k.endsWith("_pct")) return ["%", 1];
+    return ["/ week", 1];
+  };
+  const [unit, mult] = unitOf(key, s.value);
+  tgt.textContent = `Target ${s.better === "higher" ? "≥" : "≤"} ${fmt(s.target, 0)}${key.includes("hours") ? " h" : key.endsWith("_pct") ? "%" : " / week"}`;
+  const frac = s.value == null ? 0 : s.better === "higher" ? clamp(s.value / (s.target * 1.5)) : clamp(1 - s.value / (s.target * 1.5));
+  return { val, bi, value: s.value == null ? null : s.value * mult, unit, frac, dec: unit === "min" || unit === "/ week" ? (unit === "min" ? 0 : 1) : 1 };
+});
+$("url").textContent = URL_TEXT;
+$("foot-right").textContent = URL_TEXT;
+
+/* ---- the timeline ---- */
+function show(id, o, dy = 0) { const e = $(id); e.style.opacity = o; e.style.transform = `translateY(${dy}px)`; }
+
+function setStages(states) {
+  stageEls.forEach((s, i) => {
+    s.d.className = "st " + (states[i] || "");
+    s.ic.textContent = states[i] === "done" ? "✓" : states[i] === "failed" ? "✕" : "";
+    s.v.textContent = states[i] === "skipped" ? "skipped" : s.base;
+  });
+}
+function stageY(i) {
+  const e = stageEls[i].d;
+  return e.offsetTop + e.offsetHeight / 2 - 12;
+}
+function placePacket(pos, visible, color) {
+  // pos: continuous stage index (0..4)
+  const i = Math.floor(clamp(pos, 0, 4)), f = pos - i;
+  const y = i >= 4 ? stageY(4) : stageY(i) + (stageY(i + 1) - stageY(i)) * f;
+  const p = $("packet");
+  p.style.top = y + "px";
+  p.style.opacity = visible;
+  p.style.background = color || "var(--accent)";
+  p.style.boxShadow = color ? `0 0 0 8px rgba(224,72,72,.2), 0 0 30px rgba(224,72,72,.6)` : "";
+}
+
+window.setTime = function (t) {
+  // Scene 1: hook (0 - 3.2)
+  const hk = fadeWin(t, 0, 3.2, .45);
+  $("s-hook").style.opacity = hk;
+  show("hook1", ease(seg(t, .15, .75)), 30 * (1 - ease(seg(t, .15, .75))));
+  show("hook2", ease(seg(t, 1.15, 1.75)), 30 * (1 - ease(seg(t, 1.15, 1.75))));
+
+  // Scenes 2-3: pipeline (3.2 - 15)
+  const pipeO = fadeWin(t, 3.2, 15, .5);
+  $("s-pipe").style.opacity = pipeO;
+  $("diagram").style.opacity = pipeO;
+  $("diagram").style.transform = `translateY(${24 * (1 - ease(seg(t, 3.2, 3.8)))}px)`;
+  let title = "", caption = "", states = ["", "", "", "", ""], pos = 0, pv = 0, pc = null, errText = "", errO = 0;
+  if (t < 9) {
+    title = "Every 3 hours, a real pipeline runs.";
+    const p = seg(t, 4.0, 8.0);
+    pos = easeIO(p) * 4; pv = t >= 3.9 && t < 8.6 ? 1 : 0;
+    states = states.map((_, i) => (t >= 4.0 && pos >= i - 0.05) ? "done" : "");
+    caption = t > 8.2 ? "18 data tests pass. Every run logs itself." : "";
+  } else if (t < 13.3) {
+    title = "Then we break it on purpose.";
+    const p = seg(t, 9.5, 10.9);
+    pos = easeIO(p) * 2; pv = 1;
+    states = ["", "", "", "", ""];
+    if (pos >= 0) states[0] = "done";
+    if (pos >= 1 - .05) states[1] = "done";
+    if (t >= 10.9) { states[2] = "failed"; states[3] = "skipped"; states[4] = "skipped"; pc = "var(--critical)"; }
+    // shake the failing stage
+    const sh = t >= 10.9 && t < 11.3 ? Math.sin((t - 10.9) * 60) * 10 * (1 - seg(t, 10.9, 11.3)) : 0;
+    stageEls[2].d.style.transform = `translateX(${sh}px)`;
+    const typed = Math.floor(seg(t, 11.1, 12.3) * ERR.length);
+    errText = ERR.slice(0, typed); errO = ease(seg(t, 11.0, 11.2));
+    caption = t > 12.3 ? "Caught at the contract check. Bad data never reached the marts." : "Upstream renames a field without warning.";
+  } else {
+    stageEls[2].d.style.transform = "";
+    title = "Next run: recovered.";
+    const p = seg(t, 13.5, 14.4);
+    pos = easeIO(p) * 4; pv = t < 14.6 ? 1 : 0;
+    states = states.map((_, i) => (pos >= i - 0.05) ? "done" : "");
+    errO = 1 - ease(seg(t, 13.3, 13.6)); errText = ERR;
+    caption = t > 14.2 ? `Median time to restore: ${ttr == null ? "–" : ttr < 1 ? fmt(ttr * 60, 0) + " min" : fmt(ttr, 1) + " h"}.` : "";
+  }
+  $("pipe-title").textContent = title;
+  $("pipe-caption").textContent = caption;
+  setStages(states);
+  placePacket(pos, pv, pc);
+  const err = $("err");
+  err.style.opacity = errO;
+  err.textContent = errText;
+  if (errO > 0 && t < 13.3) { const c = document.createElement("span"); c.className = "cursor"; c.style.opacity = Math.floor(t * 3) % 2 ? 0 : 1; err.appendChild(c); }
+
+  // Scene 4: heartbeat (15 - 19.6)
+  const bO = fadeWin(t, 15, 19.6, .45);
+  $("s-beat").style.opacity = bO;
+  const grow = seg(t, 15.4, 17.8);
+  beatBars.forEach(b => {
+    const local = clamp((grow - b.frac * .92) / .08);
+    const h = b.h * ease(local);
+    b.rect.setAttribute("y", (330 - h).toFixed(1));
+    b.rect.setAttribute("height", Math.max(0, h).toFixed(1));
+  });
+  STATS.forEach((s, i) => { s.b.textContent = fmt(Math.round(s.v * ease(seg(t, 16.2 + i * .2, 17.8 + i * .2))), 0); });
+
+  // Scene 5: scorecard (19.6 - 23.4)
+  const sO = fadeWin(t, 19.6, 23.4, .45);
+  $("s-score").style.opacity = sO;
+  tiles.forEach((tl, i) => {
+    const p = ease(seg(t, 20.0 + i * .15, 21.4 + i * .15));
+    tl.val.textContent = tl.value == null ? "–" : fmt(tl.value * p, tl.dec);
+    if (tl.value != null) { const sm = document.createElement("small"); sm.textContent = tl.unit; tl.val.appendChild(sm); }
+    tl.bi.style.width = (tl.frac * 100 * p) + "%";
+  });
+
+  // Scene 6: end card (23.4 - 26)
+  const eO = ease(seg(t, 23.4, 23.9));
+  $("s-end").style.opacity = eO;
+  $("s-end").style.transform = `translateY(${20 * (1 - eO)}px)`;
+
+  // Demo label whenever numbers are on screen
+  $("demo-note").style.opacity = M.demo ? Math.max(bO, sO, pipeO * (t > 13.3 ? 1 : 0)) : 0;
+  $("foot-right").style.opacity = 1 - eO;
+};
+window.DURATION = DURATION;
+setTime(0);
+</script>
+</body>
+</html>

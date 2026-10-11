@@ -104,4 +104,9 @@ jobs:
         run: |
           echo "Pipeline run failed. See the run log and the dashboard incidents table."
           exit 1
-      - run: echo "Pipeline run succeeded."
+      - name: Fail the workflow if the dashboard did not publish
+        if: needs.deploy.result != 'success'
+        run: |
+          echo "Dashboard deploy failed. Check that Settings > Pages > Source is set to GitHub Actions."
+          exit 1
+      - run: echo "Pipeline run succeeded and the dashboard is published."
