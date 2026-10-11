@@ -2,19 +2,19 @@
 <meta name="description" content="DORA, reliability, data quality and performance metrics for a live, self-measuring data pipeline.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600&display=swap">
 <style>
-/* Layout: an operations console. Scorecard first, then four bands (Delivery, Reliability, Quality, Performance), each chart + detail. */
+/* Layout: a pipeline control room. Hero thesis + live status, a 30-day heartbeat of every run, the anatomy of one run, then the scorecard and four detail bands. */
 :root {
-  --bg: #f6f7f8;
-  --surface: #fcfcfb;
-  --fg: #0e1a22;
-  --fg-2: #4b5761;
-  --muted: #84909a;
-  --line: #e1e4e6;
-  --axis: #c2c8cc;
-  --accent: #1f6f8b;
-  --series-1: #2a78d6;
+  --bg: #eef1f5;
+  --surface: #fbfcfd;
+  --fg: #0f1b2d;
+  --fg-2: #46546a;
+  --muted: #7d8899;
+  --line: #dde2e9;
+  --axis: #c3cad4;
+  --accent: #2f5bea;
+  --accent-soft: rgba(47, 91, 234, 0.10);
   --series-2: #6250d6;
   --good: #0ca30c;
   --good-ink: #006300;
@@ -22,125 +22,220 @@
   --warning-ink: #8a5a00;
   --critical: #d03b3b;
   --critical-ink: #a32525;
-  --injected: #a9b2b9;
-  --chip-bg: rgba(14, 26, 34, 0.06);
-  --ring: rgba(14, 26, 34, 0.10);
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --injected: #a7b0bd;
+  --chip: rgba(15, 27, 45, 0.06);
+  --ring: rgba(15, 27, 45, 0.10);
+  --shadow: 0 1px 2px rgba(15, 27, 45, 0.04), 0 8px 24px rgba(15, 27, 45, 0.06);
+  --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0d1113; --surface: #161b1e; --fg: #eef1f2; --fg-2: #b9c2c8; --muted: #84909a;
-    --line: #262d31; --axis: #3a4247; --accent: #5cb3cf; --series-1: #3987e5; --series-2: #9085e9;
-    --good-ink: #3fc23f; --warning-ink: #fab219; --critical-ink: #ef7272; --injected: #59636a;
-    --chip-bg: rgba(255, 255, 255, 0.07); --ring: rgba(255, 255, 255, 0.10); color-scheme: dark;
+    --bg: #0b1220; --surface: #121b2b; --fg: #e8edf5; --fg-2: #b3bfcf; --muted: #7d8899;
+    --line: #1f2a3c; --axis: #33415a; --accent: #7d9bff; --accent-soft: rgba(125, 155, 255, 0.12);
+    --series-2: #9085e9; --good-ink: #3fc23f; --warning-ink: #fab219; --critical-ink: #ef7272;
+    --injected: #4d5869; --chip: rgba(255, 255, 255, 0.07); --ring: rgba(255, 255, 255, 0.09);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0d1113; --surface: #161b1e; --fg: #eef1f2; --fg-2: #b9c2c8; --muted: #84909a;
-  --line: #262d31; --axis: #3a4247; --accent: #5cb3cf; --series-1: #3987e5; --series-2: #9085e9;
-  --good-ink: #3fc23f; --warning-ink: #fab219; --critical-ink: #ef7272; --injected: #59636a;
-  --chip-bg: rgba(255, 255, 255, 0.07); --ring: rgba(255, 255, 255, 0.10); color-scheme: dark;
+  --bg: #0b1220; --surface: #121b2b; --fg: #e8edf5; --fg-2: #b3bfcf; --muted: #7d8899;
+  --line: #1f2a3c; --axis: #33415a; --accent: #7d9bff; --accent-soft: rgba(125, 155, 255, 0.12);
+  --series-2: #9085e9; --good-ink: #3fc23f; --warning-ink: #fab219; --critical-ink: #ef7272;
+  --injected: #4d5869; --chip: rgba(255, 255, 255, 0.07); --ring: rgba(255, 255, 255, 0.09);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25); color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
-.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 28px; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: 24px; padding-block: 36px 64px; display: grid; gap: 40px; }
 a { color: var(--accent); }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; color: var(--muted); }
 
-header { display: grid; gap: 10px; }
-.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-h1 { font-size: 30px; line-height: 1.15; margin: 0; font-weight: 600; text-wrap: balance; }
-.lede { margin: 0; color: var(--fg-2); max-width: 68ch; }
-.meta { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--chip-bg); font-size: 12.5px; color: var(--fg-2); }
-.chip b { color: var(--fg); font-weight: 500; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
-.dot.good { background: var(--good); } .dot.warn { background: var(--warning); } .dot.bad { background: var(--critical); }
-.demo { border: 1px dashed var(--warning); background: color-mix(in srgb, var(--warning) 10%, transparent); padding: 10px 14px; border-radius: 8px; color: var(--fg); }
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 32px; align-items: end; }
+.hero h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(40px, 6vw, 68px); line-height: .95; letter-spacing: -0.02em; margin: 10px 0 14px; text-wrap: balance; }
+.hero p { margin: 0; color: var(--fg-2); max-width: 60ch; font-size: 16.5px; }
+.status-card { background: var(--surface); border: 1px solid var(--ring); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); display: grid; gap: 12px; }
+.status-main { display: flex; align-items: center; gap: 12px; }
+.pulse { width: 14px; height: 14px; border-radius: 50%; background: var(--good); position: relative; flex: none; }
+.pulse::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--good); opacity: 0; animation: ping 2.4s ease-out infinite; }
+.pulse.bad { background: var(--critical); } .pulse.bad::after { border-color: var(--critical); }
+@keyframes ping { 0% { transform: scale(.5); opacity: .7; } 100% { transform: scale(1.4); opacity: 0; } }
+.status-word { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; }
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+.status-grid div { display: grid; gap: 1px; }
+.status-grid span { font-size: 12.5px; color: var(--muted); }
+.status-grid b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.demo { border: 1px dashed var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); padding: 10px 14px; border-radius: 10px; font-size: 14px; }
 
-h2 { font-size: 18px; margin: 0; font-weight: 600; }
+/* Panels */
+.panel { background: var(--surface); border: 1px solid var(--ring); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); display: grid; gap: 14px; align-content: start; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -0.01em; margin: 0; }
+h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.sub { margin: 0; color: var(--muted); font-size: 13.5px; }
+section { display: grid; gap: 16px; }
 .section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
-.section-head p { margin: 0; color: var(--muted); font-size: 13px; }
-section { display: grid; gap: 14px; }
+.section-head p { margin: 0; color: var(--muted); font-size: 13.5px; max-width: 70ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--fg-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
-.scorecard { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
-.tile .label { font-size: 13px; color: var(--fg-2); }
-.tile .value { font-size: 28px; font-weight: 600; line-height: 1.1; }
-.tile .value small { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 4px; }
-.tile .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-.group-label { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
-.status { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; font-size: 12px; white-space: nowrap; }
+/* Heartbeat */
+.beat { position: relative; }
+.beat svg { display: block; width: 100%; height: auto; }
+.beat text, .chart text { font-family: var(--font-body); font-size: 11.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Anatomy of a run */
+.toggle { display: inline-flex; background: var(--chip); border-radius: 999px; padding: 3px; gap: 2px; }
+.toggle button { font: inherit; font-size: 13px; border: 0; background: transparent; color: var(--fg-2); padding: 5px 12px; border-radius: 999px; cursor: pointer; }
+.toggle button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); font-weight: 600; }
+.toggle button:disabled { opacity: .45; cursor: default; }
+.flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; align-items: stretch; }
+.stage { position: relative; display: grid; gap: 6px; align-content: start; padding: 14px; border-radius: 12px; border: 1px solid var(--ring); background: var(--bg); min-width: 0; }
+.stage + .stage { margin-left: 36px; }
+.stage .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.stage .n { font-weight: 600; font-size: 15px; }
+.stage .v { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-2); overflow-wrap: anywhere; }
+.stage .badge { justify-self: start; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--fg-2); }
+.stage.done .badge { color: var(--good-ink); }
+.stage.failed { border-color: var(--critical); background: color-mix(in srgb, var(--critical) 8%, var(--bg)); }
+.stage.failed .badge { color: var(--critical-ink); }
+.stage.skipped { opacity: .55; }
+.stage.skipped .badge { color: var(--muted); }
+.wire { position: absolute; top: 50%; left: -36px; width: 36px; height: 2px; background: var(--axis); overflow: hidden; }
+.wire::before, .wire::after { content: ""; position: absolute; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); left: -6px; animation: flow 1.6s linear infinite; }
+.wire::after { animation-delay: .8s; }
+.stage.skipped .wire::before, .stage.skipped .wire::after, .stage.idle .wire::before, .stage.idle .wire::after { display: none; }
+.stage.failed .wire::before, .stage.failed .wire::after { background: var(--critical); }
+@keyframes flow { from { left: -6px; } to { left: 36px; } }
+.run-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--fg-2); }
+.run-meta b { color: var(--fg); font-weight: 600; }
+.errbox { font-family: var(--font-mono); font-size: 12.5px; background: color-mix(in srgb, var(--critical) 8%, transparent); border-left: 3px solid var(--critical); padding: 10px 12px; border-radius: 0 8px 8px 0; overflow-wrap: anywhere; color: var(--fg); }
+
+/* Scorecard */
+.scorecard { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.group-label { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.group-label:not(:first-child) { margin-top: 6px; }
+.tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); display: grid; gap: 8px; align-content: start; }
+.tile .label { font-size: 13.5px; color: var(--fg-2); }
+.tile .row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.tile .value { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; }
+.tile .value small { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.tile .spark { width: 96px; height: 30px; flex: none; }
+.tile .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.bullet { height: 14px; }
+.bullet svg { display: block; width: 100%; height: 14px; overflow: visible; }
+.status { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; font-size: 12.5px; white-space: nowrap; }
 .status.met { color: var(--good-ink); } .status.at_risk { color: var(--warning-ink); } .status.missed { color: var(--critical-ink); } .status.no_data { color: var(--muted); }
 .status svg { width: 12px; height: 12px; flex: none; }
 
-.band { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; }
-.panel { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
-.panel h3 { margin: 0; font-size: 14px; font-weight: 600; }
-.panel .sub { margin: 0; font-size: 12.5px; color: var(--muted); }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--fg-2); }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.legend i.line { height: 2px; width: 14px; border-radius: 1px; }
+/* Detail bands */
+.band { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
 .chart { width: 100%; position: relative; }
 .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-.chart text { font-family: var(--font-sans); font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
-.empty { color: var(--muted); font-size: 13px; padding: 24px 0; text-align: center; }
-
-.kv { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 13px; }
-.kv dt { color: var(--fg-2); } .kv dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; font-weight: 500; }
-
+.empty { color: var(--muted); font-size: 13.5px; padding: 24px 0; text-align: center; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 14px; margin: 0; }
+.kv dt { color: var(--fg-2); } .kv dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; }
 .table-wrap { overflow-x: auto; }
-table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 12.5px; }
+table { width: 100%; min-width: 540px; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; font-weight: 500; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 12.5px; }
+td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 td:first-child { white-space: nowrap; }
-th { text-align: left; font-weight: 500; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-td.mono { font-family: var(--font-mono); font-size: 12px; }
-td.err { color: var(--fg-2); max-width: 420px; }
-.tag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11.5px; background: var(--chip-bg); color: var(--fg-2); white-space: nowrap; }
+td.mono { font-family: var(--font-mono); font-size: 12.5px; }
+td.err { color: var(--fg-2); font-family: var(--font-mono); font-size: 12px; min-width: 260px; max-width: 440px; overflow-wrap: anywhere; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--chip); color: var(--fg-2); white-space: nowrap; }
 .tag.real { color: var(--critical-ink); } .tag.ok { color: var(--good-ink); }
+.hbars { display: grid; gap: 10px; }
+.hbar-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px 36px; gap: 10px; align-items: center; font-size: 13px; }
+.hbar-row .name { font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; color: var(--fg-2); }
+.hbar-row .track { height: 10px; background: var(--chip); border-radius: 0 4px 4px 0; }
+.hbar-row .fill { height: 10px; border-radius: 0 4px 4px 0; }
+.hbar-row .n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 
-.hbar-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px 32px; gap: 10px; align-items: center; font-size: 12.5px; }
-.hbar-row .name { font-family: var(--font-mono); font-size: 11.5px; overflow-wrap: anywhere; color: var(--fg-2); }
-.hbar-row .track { height: 10px; background: var(--chip-bg); border-radius: 0 4px 4px 0; }
-.hbar-row .fill { height: 10px; background: var(--critical); border-radius: 0 4px 4px 0; }
-.hbar-row .n { text-align: right; font-variant-numeric: tabular-nums; }
-
-#tip { position: fixed; pointer-events: none; z-index: 10; background: var(--surface); border: 1px solid var(--ring); box-shadow: 0 6px 20px rgba(0,0,0,.12); border-radius: 8px; padding: 8px 10px; font-size: 12px; min-width: 140px; }
-#tip .t { color: var(--muted); margin-bottom: 4px; }
-#tip .r { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+#tip { position: fixed; pointer-events: none; z-index: 10; background: var(--surface); border: 1px solid var(--ring); box-shadow: var(--shadow); border-radius: 10px; padding: 9px 11px; font-size: 13px; min-width: 150px; max-width: 320px; }
+#tip .t { color: var(--muted); margin-bottom: 4px; font-size: 12px; }
+#tip .r { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
 #tip .r span { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-2); }
 #tip .r b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
 #tip i { width: 12px; height: 2px; display: inline-block; border-radius: 1px; }
 
-footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 16px; }
-footer dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; }
-footer dt { color: var(--fg-2); font-weight: 500; }
+footer { color: var(--muted); font-size: 13.5px; display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 18px; }
+footer dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
+footer dt { color: var(--fg-2); font-weight: 600; }
 footer dd { margin: 0; }
 
-@media (max-width: 900px) {
+@media (prefers-reduced-motion: reduce) {
+  .pulse::after, .wire::before, .wire::after { animation: none; display: none; }
+}
+@media (max-width: 960px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
   .scorecard { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .band { grid-template-columns: minmax(0, 1fr); }
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .stage + .stage { margin-left: 0; margin-top: 26px; }
+  .wire { top: -26px; left: 28px; width: 2px; height: 26px; }
+  .wire::before, .wire::after { left: -2px; top: -6px; animation-name: flow-down; }
+  @keyframes flow-down { from { top: -6px; } to { top: 26px; } }
 }
-@media (max-width: 480px) {
-  .wrap { padding-inline: 16px; }
-  h1 { font-size: 24px; }
-  .tile .value { font-size: 23px; }
+@media (max-width: 520px) {
+  .wrap { padding-inline: 16px; gap: 32px; }
+  .scorecard { grid-template-columns: minmax(0, 1fr); }
+  .status-grid { grid-template-columns: 1fr; }
   footer dl { grid-template-columns: 1fr; }
-  .hbar-row { grid-template-columns: minmax(0, 1fr) 70px 28px; }
+  .hbar-row { grid-template-columns: minmax(0, 1fr) 70px 30px; }
 }
 </style>
 
 <div class="wrap">
-  <header>
-    <div class="eyebrow">Data pipeline · Open-Meteo → DuckDB → dbt</div>
-    <h1>DataOps Scorecard</h1>
-    <p class="lede">Software teams track DORA metrics. This pipeline tracks its own: how often changes ship, how fast they reach production, how often they break things, and how quickly it recovers. Every run logs itself, and this page is rebuilt from that log.</p>
-    <div class="meta" id="meta"></div>
-    <div class="demo" id="demo" hidden>Demo data. These numbers come from a generated history used to preview the layout. The live page replaces them with real runs.</div>
+  <header class="hero">
+    <div>
+      <div class="eyebrow">cron 17 */3 * * * · Open-Meteo → DuckDB → dbt → GitHub Pages</div>
+      <h1>DataOps Scorecard</h1>
+      <p>Software teams track DORA metrics. This pipeline tracks its own: how often changes ship, how fast they reach production, how often they break things, and how quickly it recovers. Every run logs itself, and this page is rebuilt from that log.</p>
+    </div>
+    <div class="status-card" aria-live="polite">
+      <div class="status-main"><span class="pulse" id="pulse"></span><span class="status-word" id="status-word">Loading</span></div>
+      <div class="status-grid">
+        <div><span>Last successful run</span><b id="s-last">–</b></div>
+        <div><span>Next scheduled run</span><b id="s-next">–</b></div>
+        <div><span>Runs, last 30 days</span><b id="s-runs">–</b></div>
+        <div><span>Updated</span><b id="s-updated">–</b></div>
+      </div>
+    </div>
   </header>
+
+  <div class="demo" id="demo" hidden>Demo data. These numbers come from a generated history used to preview the layout. The live page replaces them with real runs.</div>
+
+  <section class="panel" aria-labelledby="hb-h">
+    <div class="panel-head">
+      <h2 id="hb-h">Heartbeat</h2>
+      <div class="legend">
+        <span><i style="background:var(--good)"></i>Success</span>
+        <span><i style="background:var(--critical)"></i>Real failure</span>
+        <span><i style="background:var(--injected)"></i>Injected fault</span>
+      </div>
+    </div>
+    <p class="sub" id="hb-sub">Every bar is one pipeline run. Failures stand taller.</p>
+    <div class="beat" id="beat"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="an-h">
+    <div class="panel-head">
+      <h2 id="an-h">Anatomy of a run</h2>
+      <div class="toggle" role="group" aria-label="Which run to show">
+        <button type="button" id="btn-latest" aria-pressed="true">Latest run</button>
+        <button type="button" id="btn-incident" aria-pressed="false">Latest failure</button>
+      </div>
+    </div>
+    <div class="run-meta" id="run-meta"></div>
+    <div class="flow" id="flow"></div>
+    <div class="errbox" id="run-error" hidden></div>
+  </section>
 
   <section aria-labelledby="sc-h">
     <div class="section-head"><h2 id="sc-h">Scorecard</h2><p id="sc-sub"></p></div>
@@ -150,19 +245,13 @@ footer dd { margin: 0; }
   <section aria-labelledby="del-h">
     <div class="section-head"><h2 id="del-h">Delivery</h2><p>A deployment is the first successful run of a new commit on main.</p></div>
     <div class="band">
-      <div class="panel">
-        <h3>Deployments per day</h3>
-        <div class="chart" id="c-deploys"></div>
-      </div>
-      <div class="panel">
-        <h3>Recent changes</h3>
-        <div class="table-wrap"><table id="t-changes"></table></div>
-      </div>
+      <div class="panel"><h3>Deployments per day</h3><div class="chart" id="c-deploys"></div></div>
+      <div class="panel"><h3>Recent changes</h3><div class="table-wrap"><table id="t-changes"></table></div></div>
     </div>
   </section>
 
   <section aria-labelledby="rel-h">
-    <div class="section-head"><h2 id="rel-h">Reliability</h2><p>Injected faults are deliberate chaos tests and are labelled separately from real failures.</p></div>
+    <div class="section-head"><h2 id="rel-h">Reliability</h2><p>Injected faults are deliberate chaos tests. They are labelled separately and never count as real failures.</p></div>
     <div class="band">
       <div class="panel">
         <h3>Runs per day by outcome</h3>
@@ -173,10 +262,7 @@ footer dd { margin: 0; }
         </div>
         <div class="chart" id="c-runs"></div>
       </div>
-      <div class="panel">
-        <h3>Window totals</h3>
-        <dl class="kv" id="kv-rel"></dl>
-      </div>
+      <div class="panel"><h3>Window totals</h3><dl class="kv" id="kv-rel"></dl></div>
     </div>
     <div class="panel">
       <h3>Incidents</h3>
@@ -186,30 +272,21 @@ footer dd { margin: 0; }
   </section>
 
   <section aria-labelledby="dq-h">
-    <div class="section-head"><h2 id="dq-h">Data quality</h2><p>dbt tests run on every build. A failing test stops bad data from reaching the marts.</p></div>
+    <div class="section-head"><h2 id="dq-h">Data quality</h2><p>dbt tests run on every build. A failing test stops bad data before it reaches the marts.</p></div>
     <div class="band">
-      <div class="panel">
-        <h3>Test pass rate per day</h3>
-        <div class="chart" id="c-tests"></div>
-      </div>
-      <div class="panel">
-        <h3>Most frequently failing checks</h3>
-        <div id="h-tests" style="display:grid;gap:8px"></div>
-      </div>
+      <div class="panel"><h3>Test pass rate per day</h3><div class="chart" id="c-tests"></div></div>
+      <div class="panel"><h3>Most frequently failing checks</h3><div class="hbars" id="h-tests"></div></div>
     </div>
   </section>
 
   <section aria-labelledby="perf-h">
     <div class="section-head"><h2 id="perf-h">Performance</h2><p>Pipeline wall-clock time per run, excluding workflow setup.</p></div>
     <div class="band">
-      <div class="panel">
-        <h3>Average successful run duration per day</h3>
-        <div class="chart" id="c-duration"></div>
-      </div>
+      <div class="panel"><h3>Average successful run duration per day</h3><div class="chart" id="c-duration"></div></div>
       <div class="panel">
         <h3>Where the time goes</h3>
         <p class="sub">Average seconds per stage, successful runs</p>
-        <div id="h-stages" style="display:grid;gap:8px"></div>
+        <div class="hbars" id="h-stages"></div>
         <dl class="kv" id="kv-perf"></dl>
       </div>
     </div>
@@ -267,6 +344,14 @@ footer dd { margin: 0; }
     if (v < 48) return fmt(v, 1) + " h";
     return fmt(v / 24, 1) + " d";
   }
+  function nextCron() {
+    // Schedule: minute 17 of every third hour, UTC.
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), 17));
+    while (d <= now || d.getUTCHours() % 3 !== 0) d.setUTCHours(d.getUTCHours() + 1);
+    const mins = Math.round((d - now) / 6e4);
+    return mins < 60 ? "in " + mins + " min" : "in " + Math.floor(mins / 60) + " h " + (mins % 60) + " min";
+  }
 
   function showTip(evt, title, rows) {
     tip.replaceChildren();
@@ -295,7 +380,92 @@ footer dd { margin: 0; }
     return 10 * p;
   }
 
-  // Frame shared by the column and line charts.
+  /* ---------- Heartbeat: one bar per run on a time axis ---------- */
+  const RUN_COLOR = (r) => r.s === "success" ? "var(--good)" : r.f ? "var(--injected)" : "var(--critical)";
+  const RUN_LABEL = (r) => r.s === "success" ? "Success" : r.f ? "Injected fault: " + r.f.replace("_", " ") : "Real failure";
+  function heartbeat(container, runs, windowDays, generatedAt) {
+    container.replaceChildren();
+    if (!runs.length) { container.appendChild(h("div", "The first run will appear here.", "empty")); return; }
+    const W = Math.max(320, container.clientWidth || 900), H = 96;
+    const m = { l: 4, r: 4, t: 6, b: 22 };
+    const end = new Date(generatedAt).getTime();
+    const start = Math.max(end - windowDays * 864e5, new Date(runs[0].t).getTime() - 36e5);
+    const x = (t) => m.l + (new Date(t).getTime() - start) / (end - start) * (W - m.l - m.r);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${runs.length} pipeline runs over ${windowDays} days` }, container);
+    const base = H - m.b, full = base - m.t;
+    el("line", { x1: m.l, x2: W - m.r, y1: base + .5, y2: base + .5, stroke: "var(--axis)", "stroke-width": 1 }, svg);
+    const bw = Math.max(2, Math.min(5, (W - m.l - m.r) / runs.length * 0.62));
+    runs.forEach(r => {
+      const hgt = r.s === "success" ? full * 0.55 : full;
+      el("rect", { x: x(r.t) - bw / 2, y: base - hgt, width: bw, height: hgt, rx: Math.min(2, bw / 2), fill: RUN_COLOR(r) }, svg);
+    });
+    // Day ticks
+    const days = Math.round((end - start) / 864e5);
+    const every = Math.max(1, Math.ceil(days / Math.floor((W - 40) / 70)));
+    const d0 = new Date(start); d0.setUTCHours(0, 0, 0, 0);
+    for (let d = new Date(d0.getTime() + 864e5), i = 0; d.getTime() < end; d = new Date(d.getTime() + 864e5), i++) {
+      if (i % every) continue;
+      const xx = x(d.toISOString());
+      if (xx < 24 || xx > W - 24) continue;
+      el("line", { x1: xx, x2: xx, y1: base + 1, y2: base + 5, stroke: "var(--axis)" }, svg);
+      const t = el("text", { x: xx, y: H - 6, "text-anchor": "middle" }, svg);
+      t.textContent = shortDate(d.toISOString().slice(0, 10));
+    }
+    const hl = el("rect", { y: m.t - 2, height: full + 4, width: bw + 6, fill: "var(--accent-soft)", rx: 3, visibility: "hidden" }, svg);
+    svg.insertBefore(hl, svg.firstChild);
+    const hit = el("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent" }, svg);
+    hit.addEventListener("pointermove", (e) => {
+      const b = svg.getBoundingClientRect(), sx = (e.clientX - b.left) * (W / b.width);
+      let best = runs[0], bd = Infinity;
+      for (const r of runs) { const dd = Math.abs(x(r.t) - sx); if (dd < bd) { bd = dd; best = r; } }
+      hl.setAttribute("x", x(best.t) - bw / 2 - 3); hl.setAttribute("visibility", "visible");
+      const rows = [[RUN_LABEL(best), "", RUN_COLOR(best)], ["Trigger", best.tr || "–"], ["Duration", fmt(best.d, 1) + " s"]];
+      if (best.st) rows.push(["Failed at", best.st]);
+      showTip(e, dateTime(best.t), rows);
+    });
+    hit.addEventListener("pointerleave", () => { hideTip(); hl.setAttribute("visibility", "hidden"); });
+  }
+
+  /* ---------- Anatomy of a run ---------- */
+  function anatomy(run) {
+    const flow = $("flow"), meta = $("run-meta"), errBox = $("run-error");
+    flow.replaceChildren(); meta.replaceChildren();
+    if (!run) { flow.appendChild(h("div", "No runs yet.", "empty")); errBox.hidden = true; return; }
+    const sd = run.stage_durations_s || {};
+    const failedAt = run.status === "success" ? null : (run.failed_stage || run.stage);
+    const order = ["source", "ingest", "load", "transform", "publish"];
+    const failIdx = failedAt ? order.indexOf(failedAt) : -1;
+    const state = (i) => failIdx < 0 ? "done" : i < failIdx ? "done" : i === failIdx ? "failed" : "skipped";
+    const testsLine = run.tests_total ? `${run.tests_passed ?? "–"}/${run.tests_total} tests passed` : "tests not reached";
+    const stages = [
+      { k: "Source", n: "Open-Meteo API", v: "6 cities · daily weather" },
+      { k: "Ingest", n: "Extract", v: sd.ingest != null ? `${fmt(run.rows_ingested ?? 0, 0)} rows · ${fmt(sd.ingest, 2)} s` : "–" },
+      { k: "Load", n: "Contract check → DuckDB", v: sd.load != null ? `${fmt(sd.load, 2)} s` : "–" },
+      { k: "Transform", n: "dbt build", v: sd.transform != null ? `${testsLine} · ${fmt(sd.transform, 2)} s` : testsLine },
+      { k: "Publish", n: "Marts + dashboard", v: run.status === "success" ? "fct_daily_weather · agg_city_monthly" : "held back" },
+    ];
+    // Source failure (timeout) is reported as the ingest stage.
+    stages.forEach((s, i) => {
+      const st = i === 0 ? (failIdx === 1 ? "done" : "done") : state(i);
+      const box = h("div", null, "stage " + st);
+      if (i > 0) box.appendChild(h("span", null, "wire"));
+      box.appendChild(h("div", s.k, "k"));
+      box.appendChild(h("div", s.n, "n"));
+      box.appendChild(h("div", s.v, "v"));
+      box.appendChild(h("span", st === "done" ? "✓ Done" : st === "failed" ? "✕ Failed" : "Skipped", "badge"));
+      flow.appendChild(box);
+    });
+    const add = (label, value) => { const s = h("span"); s.appendChild(document.createTextNode(label + " ")); s.appendChild(h("b", value)); meta.appendChild(s); };
+    add("Run", dateTime(run.started_at));
+    add("Trigger", run.trigger || "–");
+    add("Result", run.status === "success" ? "Success" : run.fault_injected ? "Failed (injected " + run.fault_injected.replace("_", " ") + ")" : "Failed");
+    if (run.duration_s != null) add("Duration", fmt(run.duration_s, 1) + " s");
+    if (run.restored_at !== undefined) add("Restored in", run.restored_at ? hours(run.time_to_restore_hours) : "still open");
+    errBox.hidden = !run.error;
+    errBox.textContent = run.error || "";
+  }
+
+  /* ---------- Shared chart frame ---------- */
   function frame(container, days, yMax, yFmt, yMin = 0) {
     container.replaceChildren();
     const W = Math.max(320, container.clientWidth || 640), H = 210;
@@ -394,7 +564,7 @@ footer dd { margin: 0; }
       row.appendChild(h("div", it.name, "name"));
       const track = h("div", null, "track"), fill = h("div", null, "fill");
       fill.style.width = (100 * it.value / max) + "%";
-      if (color) fill.style.background = color;
+      fill.style.background = color;
       track.appendChild(fill); row.appendChild(track);
       row.appendChild(h("div", it.label || fmt(it.value, 0), "n"));
       container.appendChild(row);
@@ -423,13 +593,10 @@ footer dd { margin: 0; }
     tbl.appendChild(tb);
   }
 
-  const ICON = {
-    met: "M3 6.5l2 2 4-5",
-    at_risk: "M6 2.5v4.2M6 9h.01",
-    missed: "M3.5 3.5l5 5M8.5 3.5l-5 5",
-    no_data: "M3 6h6",
-  };
+  /* ---------- Scorecard tiles ---------- */
+  const ICON = { met: "M3 6.5l2 2 4-5", at_risk: "M6 2.5v4.2M6 9h.01", missed: "M3.5 3.5l5 5M8.5 3.5l-5 5", no_data: "M3 6h6" };
   const STATUS_TEXT = { met: "On target", at_risk: "At risk", missed: "Off target", no_data: "No data yet" };
+  const STATUS_COLOR = { met: "var(--good)", at_risk: "var(--warning)", missed: "var(--critical)", no_data: "var(--muted)" };
   function statusEl(status) {
     const s = h("span", null, "status " + status);
     const svg = el("svg", { viewBox: "0 0 12 12", "aria-hidden": "true" });
@@ -450,36 +617,90 @@ footer dd { margin: 0; }
     const [val, unit] = tileValue(sc.key, sc.target);
     return "Target " + op + val + (unit === "%" ? "%" : unit ? " " + unit : "");
   }
+  // Bullet: track, target tick, value marker on one linear scale.
+  function bullet(sc) {
+    const wrap = h("div", null, "bullet");
+    const svg = el("svg", { viewBox: "0 0 200 14", preserveAspectRatio: "none", "aria-hidden": "true" }, wrap);
+    if (sc.value == null) return wrap;
+    let lo = 0, hi;
+    if (sc.key.endsWith("_pct") && sc.better === "higher") { lo = Math.max(0, Math.floor(Math.min(sc.value, sc.target) / 5) * 5 - 10); hi = 100; }
+    else hi = Math.max(sc.value, sc.target) * 1.3 || 1;
+    const x = (v) => Math.max(0, Math.min(200, (v - lo) / (hi - lo) * 200));
+    el("rect", { x: 0, y: 4, width: 200, height: 6, rx: 3, fill: "var(--chip)" }, svg);
+    el("rect", { x: 0, y: 4, width: Math.max(3, x(sc.value)), height: 6, rx: 3, fill: STATUS_COLOR[sc.status] }, svg);
+    el("rect", { x: x(sc.target) - 1, y: 0, width: 2, height: 14, fill: "var(--fg)" }, svg);
+    return wrap;
+  }
+  function spark(values, color) {
+    const pts = values.map((v, i) => [i, v]).filter(p => p[1] != null);
+    const svg = el("svg", { viewBox: "0 0 96 30", class: "spark", "aria-hidden": "true" });
+    if (pts.length < 2) return svg;
+    const vs = pts.map(p => p[1]); let lo = Math.min(...vs), hi = Math.max(...vs);
+    if (hi === lo) { hi += 1; lo -= 1; }
+    const x = (i) => 2 + i / (values.length - 1) * 88, y = (v) => 26 - (v - lo) / (hi - lo) * 22;
+    const d = pts.map((p, j) => (j ? "L" : "M") + x(p[0]).toFixed(1) + "," + y(p[1]).toFixed(1)).join(" ");
+    el("path", { d, fill: "none", stroke: color, "stroke-width": 1.6, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    const l = pts[pts.length - 1];
+    el("circle", { cx: x(l[0]), cy: y(l[1]), r: 3, fill: color, stroke: "var(--surface)", "stroke-width": 1.5 }, svg);
+    return svg;
+  }
 
   function render(m) {
     $("demo").hidden = !m.demo;
     const t = m.totals;
-    const meta = $("meta"); meta.replaceChildren();
-    const chip = (label, value, dotCls) => {
-      const c = h("span", null, "chip");
-      if (dotCls) c.appendChild(h("span", null, "dot " + dotCls));
-      c.appendChild(document.createTextNode(label + " "));
-      c.appendChild(h("b", value));
-      meta.appendChild(c);
-    };
-    const fresh = t.hours_since_last_success;
-    chip("Last successful run", ago(t.last_success_at), fresh == null ? null : fresh <= 6 ? "good" : fresh <= 26 ? "warn" : "bad");
-    chip("Status", t.open_incident ? "Incident open" : "Healthy", t.open_incident ? "bad" : "good");
-    chip("Window", m.window_days + " days");
-    chip("Updated", dateTime(m.generated_at));
+    const open = t.open_incident;
+    $("pulse").className = "pulse" + (open ? " bad" : "");
+    $("status-word").textContent = open ? "Incident open" : "Healthy";
+    $("s-last").textContent = ago(t.last_success_at);
+    $("s-next").textContent = nextCron();
+    $("s-runs").textContent = fmt(t.runs, 0) + " (" + fmt(t.real_failures, 0) + " real failures)";
+    $("s-updated").textContent = dateTime(m.generated_at);
 
-    $("sc-sub").textContent = `${fmt(t.runs, 0)} runs · ${fmt(t.deployments, 0)} deployments · ${fmt(t.incidents, 0)} incidents in the last ${m.window_days} days`;
+    const timeline = m.timeline || [];
+    $("hb-sub").textContent = `Every bar is one pipeline run, ${fmt(timeline.length, 0)} in the last ${m.window_days} days. Failures stand taller. Hover for details.`;
+
+    // Anatomy toggle
+    const latest = (m.recent_runs || [])[0];
+    const failedRun = (m.recent_runs || []).find(r => r.status !== "success");
+    const inc = (m.incidents || [])[0];
+    const incidentRun = failedRun || (inc ? {
+      started_at: inc.started_at, trigger: inc.trigger, status: "failed", failed_stage: inc.stage, fault_injected: inc.fault_injected,
+      error: inc.error, stage_durations_s: inc.stage_durations_s, restored_at: inc.restored_at, time_to_restore_hours: inc.time_to_restore_hours,
+    } : null);
+    if (failedRun && inc && inc.run_id === failedRun.run_id) { failedRun.restored_at = inc.restored_at; failedRun.time_to_restore_hours = inc.time_to_restore_hours; }
+    const bL = $("btn-latest"), bI = $("btn-incident");
+    bI.disabled = !incidentRun;
+    const pick = (which) => {
+      bL.setAttribute("aria-pressed", which === "latest"); bI.setAttribute("aria-pressed", which === "incident");
+      anatomy(which === "latest" ? latest : incidentRun);
+    };
+    bL.onclick = () => pick("latest"); bI.onclick = () => pick("incident");
+    pick("latest");
+
+    // Scorecard
+    $("sc-sub").textContent = `${fmt(t.deployments, 0)} deployments · ${fmt(t.incidents, 0)} incidents · last ${m.window_days} days`;
+    const daily = m.daily || [];
+    const sparkFor = {
+      deployment_frequency_per_week: daily.map(d => d.deploys),
+      run_success_rate_pct: daily.map(d => { const real = d.failed - d.injected_failures; return d.success + real ? 100 * d.success / (d.success + real) : null; }),
+      daily_delivery_sla_pct: daily.map(d => d.success > 0 ? 100 : 0),
+      test_pass_rate_pct: daily.map(d => d.test_pass_rate_pct),
+      run_duration_p95_s: daily.map(d => d.avg_duration_s),
+    };
     const sc = $("scorecard"); sc.replaceChildren();
-    const groups = [["DORA delivery", m.scorecard.slice(0, 4)], ["Reliability, quality and speed", m.scorecard.slice(4)]];
-    groups.forEach(([label, items]) => {
+    [["DORA delivery", m.scorecard.slice(0, 4)], ["Reliability, quality and speed", m.scorecard.slice(4)]].forEach(([label, items]) => {
       sc.appendChild(h("div", label, "group-label"));
       items.forEach(s => {
         const tile = h("div", null, "tile");
         tile.appendChild(h("div", s.label, "label"));
+        const row = h("div", null, "row");
         const [val, unit] = tileValue(s.key, s.value);
         const v = h("div", val, "value");
         if (unit) v.appendChild(h("small", unit));
-        tile.appendChild(v);
+        row.appendChild(v);
+        if (sparkFor[s.key]) row.appendChild(spark(sparkFor[s.key], "var(--accent)"));
+        tile.appendChild(row);
+        tile.appendChild(bullet(s));
         const foot = h("div", null, "foot");
         foot.appendChild(h("span", targetText(s)));
         foot.appendChild(statusEl(s.status));
@@ -488,15 +709,15 @@ footer dd { margin: 0; }
       });
     });
 
-    const daily = m.daily;
     const draw = () => {
-      columns($("c-deploys"), daily, [{ key: "deploys", label: "Deployments", color: "var(--series-1)" }], { minMax: 2 });
+      heartbeat($("beat"), timeline, m.window_days, m.generated_at);
+      columns($("c-deploys"), daily, [{ key: "deploys", label: "Deployments", color: "var(--accent)" }], { minMax: 2 });
       columns($("c-runs"), daily.map(d => ({ ...d, real: d.failed - d.injected_failures })), [
         { key: "success", label: "Success", color: "var(--good)" },
         { key: "real", label: "Real failure", color: "var(--critical)" },
         { key: "injected_failures", label: "Injected fault", color: "var(--injected)" },
       ]);
-      line($("c-tests"), daily, "test_pass_rate_pct", { label: "Pass rate", color: "var(--series-1)", yMax: 100, fitLow: true, yFmt: v => fmt(v, 0) + "%", target: (m.scorecard.find(s => s.key === "test_pass_rate_pct") || {}).target });
+      line($("c-tests"), daily, "test_pass_rate_pct", { label: "Pass rate", color: "var(--accent)", yMax: 100, fitLow: true, yFmt: v => fmt(v, 0) + "%", target: (m.scorecard.find(s => s.key === "test_pass_rate_pct") || {}).target });
       line($("c-duration"), daily, "avg_duration_s", { label: "Avg duration", color: "var(--series-2)", yFmt: v => fmt(v, 1) + "s" });
     };
     draw();
@@ -519,13 +740,10 @@ footer dd { margin: 0; }
       { label: "Type", get: r => h("span", r.kind === "real" ? "Real" : "Injected: " + r.fault_injected.replace("_", " "), "tag" + (r.kind === "real" ? " real" : "")) },
       { label: "Stage", get: r => r.stage },
       { label: "What failed", get: r => r.error, cls: "err" },
-      { label: "Failed runs", get: r => r.failed_runs, num: true },
       { label: "Restored in", get: r => r.restored_at ? hours(r.time_to_restore_hours) : h("span", "Open", "tag real"), num: true },
     ], (m.incidents || []).slice(0, 8), "No incidents. Every run has succeeded.");
 
-    hbars($("h-tests"), (m.top_failing_tests || []).map(x => ({
-      name: x.test.replace(/_(\d+|_)+$/g, "").replace(/__/g, " · "), value: x.failures })), "var(--critical)");
-
+    hbars($("h-tests"), (m.top_failing_tests || []).map(x => ({ name: x.test.replace(/_(\d+|_)+$/g, "").replace(/__/g, " · "), value: x.failures })), "var(--critical)");
     const st = m.stage_avg_duration_s || {};
     hbars($("h-stages"), ["ingest", "load", "transform"].filter(k => st[k] != null).map(k => ({ name: k, value: st[k], label: fmt(st[k], 1) })), "var(--series-2)");
     const kp = $("kv-perf"); kp.replaceChildren();
@@ -539,7 +757,7 @@ footer dd { margin: 0; }
       { label: "Stage", get: r => r.failed_stage },
       { label: "Tests passed", get: r => r.tests_total ? `${r.tests_passed}/${r.tests_total}` : "–", num: true },
       { label: "Duration", get: r => fmt(r.duration_s, 1) + " s", num: true },
-    ], (m.recent_runs || []).slice(0, 12), "No runs yet.");
+    ], (m.recent_runs || []).slice(0, 10), "No runs yet.");
 
     const fl = $("foot-links"); fl.replaceChildren();
     fl.appendChild(document.createTextNode("Targets are team-defined and live in metrics/targets.json. "));
@@ -553,6 +771,7 @@ footer dd { margin: 0; }
     .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(render)
     .catch(err => {
+      $("status-word").textContent = "Waiting for first run";
       $("scorecard").replaceChildren(h("div", "Metrics could not be loaded (" + err.message + "). The first pipeline run creates them.", "empty"));
     });
 })();

@@ -157,6 +157,8 @@ def compute(runs: list[dict], tests: list[dict], commits: list[dict], targets: d
             "kind": "injected" if first.get("fault_injected") else "real",
             "error": first.get("error"),
             "run_id": first["run_id"],
+            "stage_durations_s": first.get("stage_durations_s", {}),
+            "trigger": first.get("trigger"),
         })
     win_incidents = [i for i in incident_rows if ts(i["started_at"]) >= start]
     ttrs = [i["time_to_restore_hours"] for i in win_incidents if i["time_to_restore_hours"] is not None]
@@ -271,8 +273,13 @@ def compute(runs: list[dict], tests: list[dict], commits: list[dict], targets: d
         "incidents": list(reversed(incident_rows))[:20],
         "recent_changes": commit_rows[:15],
         "recent_runs": [{k: r.get(k) for k in ("run_id", "started_at", "status", "trigger", "fault_injected",
-                                                "failed_stage", "duration_s", "tests_passed", "tests_total",
-                                                "rows_ingested")} for r in reversed(runs[-25:])],
+                                                "failed_stage", "error", "duration_s", "stage_durations_s",
+                                                "tests_passed", "tests_failed", "tests_skipped", "tests_total",
+                                                "rows_ingested", "rows_loaded", "models_built")}
+                        for r in reversed(runs[-25:])],
+        "timeline": [{"t": r["started_at"], "s": r["status"], "f": r.get("fault_injected"),
+                      "st": r.get("failed_stage"), "d": r.get("duration_s"), "tr": r.get("trigger")}
+                     for r in win],
     }
 
 
