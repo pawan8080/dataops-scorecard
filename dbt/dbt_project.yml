@@ -1,0 +1,17 @@
+name: dataops_scorecard
+version: "1.0.0"
+config-version: 2
+profile: dataops_scorecard
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "logs"]
+
+models:
+  dataops_scorecard:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

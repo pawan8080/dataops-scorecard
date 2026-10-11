@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_weather_daily
+    description: Deduplicated daily weather, latest version of each city/date.
+    data_tests:
+      - unique_combination:
+          columns: [city, date]
+    columns:
+      - name: city
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["Calgary", "Vancouver", "Toronto", "New York", "London", "Tokyo"]
+      - name: date
+        data_tests: [not_null]
+      - name: temp_max_c
+        data_tests:
+          - not_null
+          - value_between:
+              arguments: {min_value: -70, max_value: 60}
+      - name: temp_min_c
+        data_tests:
+          - not_null
+          - value_between:
+              arguments: {min_value: -80, max_value: 50}
+      - name: precipitation_mm
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 500}
+      - name: wind_speed_max_kmh
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 300}

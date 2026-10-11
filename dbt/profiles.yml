@@ -1,0 +1,8 @@
+dataops_scorecard:
+  target: ci
+  outputs:
+    ci:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'warehouse.duckdb') }}"
+      schema: analytics
+      threads: 4

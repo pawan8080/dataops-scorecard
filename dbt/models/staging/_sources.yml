@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: weather_daily
+        description: Daily weather per city, one row per city/date per pipeline run.
+        columns:
+          - name: run_id
+            data_tests: [not_null]
+          - name: city
+            data_tests: [not_null]
+          - name: date
+            data_tests: [not_null]

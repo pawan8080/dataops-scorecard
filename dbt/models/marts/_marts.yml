@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: fct_daily_weather
+    description: One row per city per day with derived measures.
+    data_tests:
+      - unique_combination:
+          columns: [city, date]
+    columns:
+      - name: temp_range_c
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 60}
+  - name: agg_city_monthly
+    description: Monthly climate summary per city.
+    data_tests:
+      - unique_combination:
+          columns: [city, month]

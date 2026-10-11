@@ -1,0 +1,107 @@
+name: pipeline
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"        # every 3 hours
+  push:
+    branches: [main]
+    paths:
+      - "pipeline/**"
+      - "dbt/**"
+      - "metrics/**"
+      - "dashboard/**"
+      - "scripts/build_site.py"
+      - "requirements.txt"
+      - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      fault:
+        description: "Inject a fault into this run"
+        type: choice
+        default: none
+        options: [none, schema_change, bad_values, late_data, api_timeout]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+env:
+  CHAOS_RATE: "0.08"   # share of scheduled runs that get a random injected fault
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.pipeline.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out run history (data branch)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git fetch origin data:data
+            git worktree add state data
+          else
+            git worktree add --orphan -b data state
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        id: pipeline
+        env:
+          FAULT: ${{ inputs.fault }}
+        run: python -m pipeline.run --state-dir state
+
+      - name: Compute metrics
+        run: python -m metrics.compute --state-dir state --out dashboard/data/metrics.json
+
+      - name: Save run history
+        run: |
+          cd state
+          git add -A
+          git commit -q -m "Run ${{ github.run_id }}: ${{ steps.pipeline.outputs.status }}" || echo "nothing to commit"
+          git push -q origin HEAD:data
+
+      - name: Build site
+        run: python scripts/build_site.py --out site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: run
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  report:
+    needs: [run, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail the workflow if the pipeline failed
+        if: needs.run.outputs.status != 'success'
+        run: |
+          echo "Pipeline run failed. See the run log and the dashboard incidents table."
+          exit 1
+      - run: echo "Pipeline run succeeded."

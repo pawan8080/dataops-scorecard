@@ -1,0 +1,11 @@
+{
+  "_note": "Team-defined targets (SLOs). Edit these to match what your team commits to.",
+  "deployment_frequency_per_week": {"target": 2, "better": "higher", "label": "Deployment frequency", "unit": "per week"},
+  "lead_time_hours_median": {"target": 24, "better": "lower", "label": "Lead time for changes", "unit": "hours (median)"},
+  "change_failure_rate_pct": {"target": 15, "better": "lower", "label": "Change failure rate", "unit": "%"},
+  "time_to_restore_hours_median": {"target": 6, "better": "lower", "label": "Time to restore", "unit": "hours (median)"},
+  "run_success_rate_pct": {"target": 95, "better": "higher", "label": "Run success rate (excl. injected faults)", "unit": "%"},
+  "daily_delivery_sla_pct": {"target": 99, "better": "higher", "label": "Daily delivery SLA", "unit": "% of days"},
+  "test_pass_rate_pct": {"target": 99, "better": "higher", "label": "Data test pass rate", "unit": "%"},
+  "run_duration_p95_s": {"target": 120, "better": "lower", "label": "Run duration (p95)", "unit": "seconds"}
+}
